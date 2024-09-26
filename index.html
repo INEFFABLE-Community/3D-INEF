@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Rotating Logo with Color Picker and Rotation Toggle</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+
+    #welcome {
+      position: absolute;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: goldenrod;
+      font-size: 24px;
+      font-family: Arial, sans-serif;
+      z-index: 1000;
+      text-align: center;
+    }
+
+    #colorPicker {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      font-size: 16px;
+      color: goldenrod;
+    }
+
+    .button-85 {
+      padding: 0.6em 2em;
+      border: none;
+      outline: none;
+      color: rgb(255, 255, 255);
+      background: #111;
+      cursor: pointer;
+      position: absolute;
+      top: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      font-size: 16px;
+      border-radius: 10px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .button-85:before {
+      content: "";
+      background: linear-gradient(
+        45deg,
+        #ff0000,
+        #ff7300,
+        #fffb00,
+        #48ff00,
+        #00ffd5,
+        #002bff,
+        #7a00ff,
+        #ff00c8,
+        #ff0000
+      );
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      background-size: 400%;
+      z-index: -1;
+      filter: blur(5px);
+      -webkit-filter: blur(5px);
+      width: calc(100% + 4px);
+      height: calc(100% + 4px);
+      animation: glowing-button-85 20s linear infinite;
+      transition: opacity 0.3s ease-in-out;
+      border-radius: 10px;
+    }
+
+    @keyframes glowing-button-85 {
+      0% {
+        background-position: 0 0;
+      }
+      50% {
+        background-position: 400% 0;
+      }
+      100% {
+        background-position: 0 0;
+      }
+    }
+
+    .button-85:after {
+      z-index: -1;
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #222;
+      left: 0;
+      top: 0;
+      border-radius: 10px;
+    }
+
+    @media (max-width: 768px) {
+      #welcome {
+        font-size: 18px;
+      }
+      #colorPicker {
+        font-size: 14px;
+      }
+      .button-85 {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="welcome">⦾<BR> 【ＩＮＥＦＦＡＢＬＥ】<BR> ⦾
+</div>
+    
+    <div id="colorPicker">
+      <label for="color">Choose a color:</label>
+      <input type="color" id="color" name="color" value="#00ffff">
+    </div>
+    <button class="button-85" id="toggleRotation">Stop Rotation</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  
+  <script>
+    let scene, camera, renderer, logo, controls;
+    let isRotating = true;
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+      
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(0, 1, 1).normalize();
+      scene.add(light);
+
+      const ambientLight = new THREE.AmbientLight(0x404040, 2);
+      scene.add(ambientLight);
+
+      const objLoader = new THREE.OBJLoader();
+      objLoader.load('Abstract_Shield_Symbo_0926184655.obj', function (object) {
+        logo = object;
+        scene.add(logo);
+        
+        logo.rotation.x = Math.PI / 15;
+        logo.rotation.y = 0;
+        
+        logo.traverse(function (child) {
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({ color: 0x00ffff });
+          }
+        });
+
+        logo.scale.set(1.5, 1.5, 1.5);
+        logo.position.set(0, 0, 0);
+      });
+
+      camera.position.set(0, 1, 5);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.rotateSpeed = 1.5;
+      controls.zoomSpeed = 1.2;
+      controls.panSpeed = 1.2;
+
+      controls.enableZoom = true;
+      controls.enablePan = true;
+
+      animate();
+    }
+
+    document.getElementById('color').addEventListener('input', function (event) {
+      const color = event.target.value;
+      if (logo) {
+        logo.traverse(function (child) {
+          if (child.isMesh) {
+            child.material.color.set(color);
+          }
+        });
+      }
+    });
+
+    document.getElementById('toggleRotation').addEventListener('click', function () {
+      isRotating = !isRotating;
+      this.textContent = isRotating ? 'Stop Rotation' : 'Start Rotation';
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (logo && isRotating) {
+        logo.rotation.y += 0.01;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', function() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.onload = init;
+  </script>
+  
+</body>
+</html>
